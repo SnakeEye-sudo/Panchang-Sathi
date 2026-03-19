@@ -1,4 +1,4 @@
-# Panchang Sathi
+﻿# Panchang Sathi
 
 ## About
 
@@ -9,6 +9,12 @@ Daily Hindu calendar with tithi, nakshatra, sunrise timings, and festival contex
 - GitHub repo: https://github.com/SnakeEye-sudo/Panchang-Sathi
 - Tags: sathi-family, panchang, hindu-calendar, festival-app, pwa, hindi-app
 
+<!-- app-screenshot:start -->
+## App Screenshot
+
+![App screenshot](docs/preview.png)
+
+<!-- app-screenshot:end -->
 ## Creator
 
 Built and originally created by **Er. Sangam Krishna** ([SnakeEye-sudo](https://github.com/SnakeEye-sudo)).
@@ -24,3 +30,4 @@ Built and originally created by **Er. Sangam Krishna** ([SnakeEye-sudo](https://
 This repository uses the **MIT License** with a required **NOTICE** file.
 That means collaboration is allowed, but copyright and attribution notices must stay preserved.
 See [LICENSE](LICENSE), [NOTICE](NOTICE), and [CONTRIBUTING.md](CONTRIBUTING.md).
+
