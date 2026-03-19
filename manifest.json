@@ -1,0 +1,18 @@
+{
+  "name": "Panchang Sathi",
+  "short_name": "Panchang",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#201811",
+  "theme_color": "#201811",
+  "description": "Daily Hindu calendar companion with tithi, nakshatra, yoga, paksha, masa, sunrise timings, and festival context powered by a Panchangam JS library.",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
+
