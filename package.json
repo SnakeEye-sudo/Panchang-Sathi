@@ -1,0 +1,15 @@
+{
+  "name": "panchang-sathi",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Daily Hindu calendar companion with tithi, nakshatra, yoga, paksha, masa, sunrise timings, and festival context powered by a Panchangam JS library.",
+  "scripts": {
+    "build": "esbuild src/app.ts --bundle --format=iife --target=es2020 --outfile=app.js"
+  },
+  "dependencies": {
+    "@ishubhamx/panchangam-js": "^2.2.3"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.2"
+  }
+}
