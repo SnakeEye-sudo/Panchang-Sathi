@@ -8,10 +8,11 @@
   "description": "Daily Hindu calendar companion with tithi, nakshatra, yoga, paksha, masa, sunrise timings, and festival context powered by a Panchangam JS library.",
   "icons": [
     {
-      "src": "logo.svg",
+      "src": "logo.png",
       "sizes": "512x512",
-      "type": "image/svg+xml",
+      "type": "image/png",
       "purpose": "any"
     }
   ]
 }
+
