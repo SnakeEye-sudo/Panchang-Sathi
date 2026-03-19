@@ -3,83 +3,19 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#201811">
-  <meta name="description" content="Daily Hindu calendar companion with tithi, nakshatra, yoga, paksha, masa, sunrise timings, and festival context powered by a Panchangam JS library.">
+  <meta name="theme-color" content="#2d1707">
+  <meta name="description" content="Hindu calendar app with monthly panchang, muhurat, vrat-upwas, and festival details.">
   <title>Panchang Sathi</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700;800&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700;800&family=Cinzel:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="styles.css">
 </head>
-<body data-theme="night">
-  <div class="ambient-layer">
-    <div class="ambient-orb orb-a"></div>
-    <div class="ambient-orb orb-b"></div>
-    <div class="ambient-grid"></div>
-    <div class="ambient-noise"></div>
-  </div>
-
-  <div class="page-shell">
-    <header class="hero">
-      <div class="hero-top">
-        <div class="brand-wrap">
-          <img src="logo.svg" alt="Panchang Sathi logo" class="brand-logo">
-          <div>
-            <p class="hero-tag">Daily Hindu calendar board</p>
-            <h1>Panchang Sathi</h1>
-          </div>
-        </div>
-        <a class="family-chip" href="https://snakeeye-sudo.github.io/Aapka-Sathi/">Aapka-Sathi family</a>
-      </div>
-
-      <div class="hero-grid">
-        <section class="hero-copy">
-          <p class="eyebrow">Temple-ink timekeeping</p>
-          <h2 class="hero-headline">Aaj ka panchang, sunrise timings, aur festival context ek clean daily board me.</h2>
-          <p class="hero-text">Accurate panchang data library ke saath tithi, nakshatra, yoga, paksha, masa, aur key timings ko lightweight interface me dekhiye.</p>
-          <div class="hero-badges">
-            <span class="hero-badge">Daily panchang</span><span class="hero-badge">Preset cities</span><span class="hero-badge">Use my location</span><span class="hero-badge">Festival context</span>
-          </div>
-        </section>
-
-        <section class="hero-side">
-          <div class="metric-card">
-            <p class="eyebrow">Calendar frame</p>
-            <h3>Sunrise anchored</h3>
-            <strong>Today view</strong>
-            <p class="muted">Fast daily reference.</p>
-          </div>
-          <div class="metric-card secondary">
-            <p class="eyebrow">Info</p>
-            <h3>Core engine</h3>
-            <p class="muted">Powered by @ishubhamx/panchangam-js.</p>
-          </div>
-        </section>
-      </div>
-    </header>
-
-    <main id="appRoot" class="app-root"></main>
-
-    <footer class="site-footer">
-      <div class="footer-brand">
-        <img src="logo.svg" alt="Panchang Sathi logo">
-        <div>
-          <strong>Panchang Sathi</strong>
-          <p>Daily Hindu calendar ko clear aur accessible banane ke liye.</p>
-        </div>
-      </div>
-      <nav class="footer-links">
-        <a href="about.html">About</a>
-        <a href="resources.html">Resources</a>
-        <a href="contact.html">Contact</a>
-        <a href="privacy-policy.html">Privacy</a>
-        <a href="terms.html">Terms</a>
-      </nav>
-    </footer>
-  </div>
-
+<body>
+  <main id="appRoot"></main>
   <script src="app.js"></script>
+  <script defer src="notification-prompt.js"></script>
 </body>
 </html>

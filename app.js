@@ -9946,127 +9946,391 @@
     const root = document.getElementById("appRoot");
     if (!root) return;
     const presets = {
-      delhi: { label: "Delhi", lat: 28.6139, lng: 77.209, elevation: 216 },
       varanasi: { label: "Varanasi", lat: 25.3176, lng: 82.9739, elevation: 80 },
-      mumbai: { label: "Mumbai", lat: 19.076, lng: 72.8777, elevation: 14 },
-      bengaluru: { label: "Bengaluru", lat: 12.9716, lng: 77.5946, elevation: 920 }
+      delhi: { label: "Delhi", lat: 28.6139, lng: 77.209, elevation: 216 },
+      ayodhya: { label: "Ayodhya", lat: 26.799, lng: 82.204, elevation: 93 },
+      ujjain: { label: "Ujjain", lat: 23.1765, lng: 75.7885, elevation: 494 }
     };
-    const state = { place: "delhi", custom: null };
+    const state = {
+      placeKey: "varanasi",
+      customPlace: null,
+      monthCursor: new Date((/* @__PURE__ */ new Date()).getFullYear(), (/* @__PURE__ */ new Date()).getMonth(), 1),
+      selectedDate: /* @__PURE__ */ new Date(),
+      tab: "panchang"
+    };
     root.innerHTML = `
-    <section class="section-stack">
-      <article class="tool-card">
-        <div class="toolbar">
+    <div class="app-shell">
+      <section class="topbar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">\u5350</div>
           <div>
-            <p class="eyebrow">Daily panchang</p>
-            <h3>Aaj ka tithi, nakshatra, paksha</h3>
+            <p class="eyebrow">Hindu calendar app</p>
+            <h1>Panchang Sathi</h1>
           </div>
-          <button class="ghost-btn" id="geoBtn" type="button">Use my location</button>
         </div>
-        <div class="button-row" id="presetButtons"></div>
-        <div class="result-panel">
-          <p class="mini-label">Location</p>
-          <strong class="result-number" id="placeLabel">Delhi</strong>
-          <p class="muted" id="todayLabel">--</p>
+        <div class="topbar-actions">
+          <span class="pill" id="activePlacePill">Varanasi</span>
+          <button class="chip-btn" id="geoBtn" type="button">Meri location</button>
         </div>
-        <div class="stat-grid" id="panchangGrid"></div>
-      </article>
-    </section>
+      </section>
 
-    <aside class="section-stack">
-      <article class="info-card">
-        <p class="eyebrow">Timings</p>
-        <div class="history-grid" id="timingList"></div>
-      </article>
-      <article class="info-card">
-        <p class="eyebrow">Festivals & context</p>
-        <div class="history-grid" id="festivalList"></div>
-      </article>
-    </aside>
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="eyebrow">Tithi, muhurat, vrat, tyohar</p>
+          <h2>Aaj ka panchang app jaisa, board jaisa nahi.</h2>
+          <p>Mahine bhar ke parv, selected din ka detailed panchang, aur alag sheet me muhurat aur vrat-upwas. Yeh layout calendar-app feel ke liye banaya gaya hai, taaki har din ko seedha kholkar dekha ja sake.</p>
+          <div class="hero-actions location-row" id="presetRow"></div>
+        </div>
+        <div class="hero-card">
+          <div>
+            <p class="eyebrow">Aaj ka saar</p>
+            <h3 id="todayHeadline">Loading...</h3>
+          </div>
+          <div class="inline-stats">
+            <span class="pill" id="todayFestivalPill">Tyohar check...</span>
+            <span class="pill" id="todayFastPill">Vrat check...</span>
+          </div>
+          <p id="todaySummary">Aaj ke tithi aur sunrise ke hisaab se quick summary yahan dikhegi.</p>
+        </div>
+      </section>
+
+      <section class="summary-strip" id="summaryStrip"></section>
+
+      <section class="content-grid">
+        <article class="calendar-panel">
+          <div class="month-nav">
+            <button class="nav-btn" id="prevMonthBtn" type="button">Pichhla</button>
+            <div class="month-title">
+              <p class="eyebrow">Mahina</p>
+              <strong id="monthLabel"></strong>
+            </div>
+            <button class="nav-btn primary" id="nextMonthBtn" type="button">Agla</button>
+          </div>
+          <div class="weekday-grid" id="weekdayGrid"></div>
+          <div class="calendar-grid" id="calendarGrid"></div>
+        </article>
+
+        <aside class="detail-panel">
+          <section class="detail-main">
+            <div class="detail-title">
+              <div>
+                <p class="eyebrow">Selected date</p>
+                <strong id="selectedDateLabel"></strong>
+                <p id="selectedSubtitle"></p>
+              </div>
+              <div class="inline-stats" id="selectedTags"></div>
+            </div>
+            <div class="tab-switch">
+              <button class="tab-btn active" data-tab="panchang" type="button">Panchang</button>
+              <button class="tab-btn" data-tab="muhurat" type="button">Muhurat</button>
+              <button class="tab-btn" data-tab="vrat" type="button">Vrat & Upwas</button>
+            </div>
+          </section>
+
+          <div id="detailContent"></div>
+
+          <p class="tiny-credit">Calendar flow inspired by <a href="https://www.drikpanchang.com/calendars/hindu/hinducalendar.html" target="_blank" rel="noreferrer">Drik Panchang</a>; detailed calculations are powered locally by panchangam-js.</p>
+        </aside>
+      </section>
+    </div>
   `;
-    const presetButtons = document.getElementById("presetButtons");
-    const placeLabel = document.getElementById("placeLabel");
-    const todayLabel = document.getElementById("todayLabel");
-    const panchangGrid = document.getElementById("panchangGrid");
-    const timingList = document.getElementById("timingList");
-    const festivalList = document.getElementById("festivalList");
-    function formatDate(value) {
-      if (!value) return "--";
+    const summaryStrip = document.getElementById("summaryStrip");
+    const activePlacePill = document.getElementById("activePlacePill");
+    const presetRow = document.getElementById("presetRow");
+    const monthLabel = document.getElementById("monthLabel");
+    const calendarGrid = document.getElementById("calendarGrid");
+    const detailContent = document.getElementById("detailContent");
+    const selectedDateLabel = document.getElementById("selectedDateLabel");
+    const selectedSubtitle = document.getElementById("selectedSubtitle");
+    const selectedTags = document.getElementById("selectedTags");
+    const todayHeadline = document.getElementById("todayHeadline");
+    const todaySummary = document.getElementById("todaySummary");
+    const todayFestivalPill = document.getElementById("todayFestivalPill");
+    const todayFastPill = document.getElementById("todayFastPill");
+    const weekdayLabels = ["Ravi", "Som", "Mangal", "Budh", "Guru", "Shukra", "Shani"];
+    function getTimezoneOffsetMinutes(date) {
+      return -date.getTimezoneOffset() || 330;
+    }
+    function activePlace() {
+      return state.customPlace || presets[state.placeKey];
+    }
+    function isSameDay(left, right) {
+      return left.getFullYear() === right.getFullYear() && left.getMonth() === right.getMonth() && left.getDate() === right.getDate();
+    }
+    function createDate(year, month, day) {
+      return new Date(year, month, day, 6, 0, 0, 0);
+    }
+    function formatDate(date) {
       return new Intl.DateTimeFormat("hi-IN", {
         weekday: "long",
         day: "numeric",
         month: "long",
         year: "numeric"
-      }).format(value);
+      }).format(date);
     }
-    function formatTime(value, timeZone) {
+    function formatMonth(date) {
+      return new Intl.DateTimeFormat("hi-IN", {
+        month: "long",
+        year: "numeric"
+      }).format(date);
+    }
+    function formatTime(value) {
       if (!value) return "--";
       return new Intl.DateTimeFormat("en-IN", {
         hour: "numeric",
-        minute: "2-digit",
-        timeZone
+        minute: "2-digit"
       }).format(value);
     }
-    function getOffsetMinutes() {
-      return -(/* @__PURE__ */ new Date()).getTimezoneOffset();
+    function formatRange(value) {
+      if (!value?.start || !value?.end) return "--";
+      return `${formatTime(value.start)} - ${formatTime(value.end)}`;
     }
-    function activePlace() {
-      if (state.custom) return state.custom;
-      return presets[state.place];
-    }
-    function render() {
+    function panchangFor(date) {
       const place = activePlace();
       const observer = new import_panchangam_js.Observer(place.lat, place.lng, place.elevation || 0);
-      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Kolkata";
-      const p = (0, import_panchangam_js.getPanchangam)(/* @__PURE__ */ new Date(), observer, { timezoneOffset: getOffsetMinutes() || 330 });
-      placeLabel.textContent = place.label;
-      todayLabel.textContent = formatDate(/* @__PURE__ */ new Date());
+      return (0, import_panchangam_js.getPanchangam)(date, observer, { timezoneOffset: getTimezoneOffsetMinutes(date) });
+    }
+    function getFestivalName(data) {
+      return data.festivals?.[0]?.name || "";
+    }
+    function isFastingDay(data) {
+      return Boolean(data.festivals?.some((festival) => festival.isFastingDay));
+    }
+    function monthFestivalDigest(date) {
+      const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+      const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+      const festivals = [];
+      for (let day = 1; day <= lastDay.getDate(); day += 1) {
+        const current = createDate(firstDay.getFullYear(), firstDay.getMonth(), day);
+        const panchang = panchangFor(current);
+        const firstFestival = panchang.festivals?.[0];
+        if (firstFestival) {
+          festivals.push({
+            date: current,
+            name: firstFestival.name,
+            fasting: Boolean(firstFestival.isFastingDay)
+          });
+        }
+      }
+      return festivals;
+    }
+    function renderTopSummary(selected, monthFestivals) {
+      const festivalName = getFestivalName(selected);
+      todayHeadline.textContent = festivalName || `${import_panchangam_js.tithiNames[selected.tithi]} ka din`;
+      todaySummary.textContent = `${import_panchangam_js.nakshatraNames[selected.nakshatra]} nakshatra, ${String(selected.paksha)} paksha, aur sunrise ${formatTime(selected.sunrise)} par.`;
+      todayFestivalPill.textContent = festivalName || "Aaj regular din";
+      todayFastPill.textContent = isFastingDay(selected) ? "Vrat / upwas" : "No major vrat";
       const cards = [
-        ["Tithi", import_panchangam_js.tithiNames[p.tithi] || String(p.tithi)],
-        ["Nakshatra", import_panchangam_js.nakshatraNames[p.nakshatra] || String(p.nakshatra)],
-        ["Yoga", import_panchangam_js.yogaNames[p.yoga] || String(p.yoga)],
-        ["Paksha", String(p.paksha)],
-        ["Masa", p.masa?.name || "--"],
-        ["Ritu", String(p.ritu || "--")]
+        { label: "Sunrise", value: formatTime(selected.sunrise), note: "Din ki shuruaat" },
+        { label: "Sunset", value: formatTime(selected.sunset), note: "Sandhya samay" },
+        { label: "Mahine ke parv", value: String(monthFestivals.length), note: "Current month list" },
+        { label: "Masa", value: selected.masa?.name || "--", note: String(selected.ritu || "Ritu") }
       ];
-      panchangGrid.innerHTML = cards.map(([label, value]) => `
-      <div class="stat-box">
-        <p class="mini-label">${label}</p>
-        <strong>${value}</strong>
+      summaryStrip.innerHTML = cards.map((card) => `
+      <div class="summary-card">
+        <p class="micro-label">${card.label}</p>
+        <strong>${card.value}</strong>
+        <p>${card.note}</p>
       </div>
     `).join("");
-      const timings = [
-        ["Sunrise", formatTime(p.sunrise, timezone)],
-        ["Sunset", formatTime(p.sunset, timezone)],
-        ["Abhijit", p.abhijitMuhurta ? `${formatTime(p.abhijitMuhurta.start, timezone)} - ${formatTime(p.abhijitMuhurta.end, timezone)}` : "--"],
-        ["Rahu Kalam", p.rahuKalam ? `${formatTime(p.rahuKalam.start, timezone)} - ${formatTime(p.rahuKalam.end, timezone)}` : "--"]
-      ];
-      timingList.innerHTML = timings.map(([label, value]) => `
-      <div class="history-card"><strong>${label}</strong><span class="muted">${value}</span></div>
-    `).join("");
-      const festivals = p.festivals && p.festivals.length ? p.festivals.slice(0, 4).map((item) => `<div class="history-card"><strong>${item.name}</strong><span class="muted">${item.category}</span></div>`).join("") : '<div class="history-card"><strong>Festival marker nahi hai</strong><span class="muted">Aaj regular panchang din hai.</span></div>';
-      festivalList.innerHTML = festivals;
     }
-    presetButtons.innerHTML = Object.entries(presets).map(([key, value], index) => `
-    <button class="mode-btn ${index === 0 ? "active" : ""}" data-place="${key}" type="button">${value.label}</button>
-  `).join("");
-    presetButtons.querySelectorAll("[data-place]").forEach((button) => {
-      button.addEventListener("click", () => {
-        state.custom = null;
-        state.place = button.getAttribute("data-place") || "delhi";
-        presetButtons.querySelectorAll("[data-place]").forEach((node) => node.classList.toggle("active", node === button));
-        render();
+    function renderCalendar(monthFestivals) {
+      const cursor = state.monthCursor;
+      monthLabel.textContent = formatMonth(cursor);
+      activePlacePill.textContent = activePlace().label;
+      const year = cursor.getFullYear();
+      const month = cursor.getMonth();
+      const first = new Date(year, month, 1);
+      const last = new Date(year, month + 1, 0);
+      const leading = first.getDay();
+      const totalSlots = Math.ceil((leading + last.getDate()) / 7) * 7;
+      const festivalMap = new Map(
+        monthFestivals.map((festival) => [festival.date.getDate(), festival])
+      );
+      const cells = [];
+      for (let slot = 0; slot < totalSlots; slot += 1) {
+        const dayNumber = slot - leading + 1;
+        if (dayNumber < 1 || dayNumber > last.getDate()) {
+          cells.push('<div class="day-cell empty"></div>');
+          continue;
+        }
+        const cellDate = createDate(year, month, dayNumber);
+        const data = panchangFor(cellDate);
+        const festival = festivalMap.get(dayNumber);
+        const classes = [
+          "day-cell",
+          isSameDay(cellDate, /* @__PURE__ */ new Date()) ? "today" : "",
+          isSameDay(cellDate, state.selectedDate) ? "selected" : ""
+        ].filter(Boolean).join(" ");
+        cells.push(`
+        <button class="${classes}" data-date="${cellDate.toISOString()}">
+          <span class="day-number">${dayNumber}</span>
+          <span class="day-tithi">${import_panchangam_js.tithiNames[data.tithi]}</span>
+          <span class="day-festival">${festival ? festival.name : ""}</span>
+        </button>
+      `);
+      }
+      calendarGrid.innerHTML = cells.join("");
+    }
+    function renderPanchangSheet(data) {
+      const cards = [
+        ["Tithi", import_panchangam_js.tithiNames[data.tithi]],
+        ["Nakshatra", import_panchangam_js.nakshatraNames[data.nakshatra]],
+        ["Yoga", import_panchangam_js.yogaNames[data.yoga]],
+        ["Karana", import_panchangam_js.karanaNames?.[data.karana] || String(data.karana)],
+        ["Paksha", String(data.paksha)],
+        ["Masa", data.masa?.name || "--"],
+        ["Ritu", String(data.ritu || "--")],
+        ["Vaar", String(data.vaara || "--")]
+      ];
+      detailContent.innerHTML = `
+      <section class="sheet-grid">
+        ${cards.map(([label, value]) => `
+          <article class="sheet-item">
+            <p class="micro-label">${label}</p>
+            <strong>${value}</strong>
+          </article>
+        `).join("")}
+      </section>
+    `;
+    }
+    function renderMuhuratSheet(data) {
+      const cards = [
+        ["Abhijit Muhurat", formatRange(data.abhijitMuhurta)],
+        ["Brahma Muhurta", formatRange(data.brahmaMuhurta)],
+        ["Rahu Kalam", formatRange(data.rahuKalam)],
+        ["Yamaganda", formatRange(data.yamaganda)],
+        ["Gulika", formatRange(data.gulika)],
+        ["Varjyam", formatRange(data.varjyam)],
+        ["Amrit Kalam", formatRange(data.amritKalam)],
+        ["Dur Muhurta", formatRange(data.durMuhurta)]
+      ];
+      detailContent.innerHTML = `
+      <section class="sheet-grid">
+        ${cards.map(([label, value]) => `
+          <article class="sheet-item">
+            <p class="micro-label">${label}</p>
+            <strong>${value}</strong>
+          </article>
+        `).join("")}
+      </section>
+    `;
+    }
+    function renderVratSheet(data, monthFestivals) {
+      const selectedFestivals = data.festivals || [];
+      const upcoming = monthFestivals.filter((festival) => festival.date >= createDate(state.selectedDate.getFullYear(), state.selectedDate.getMonth(), state.selectedDate.getDate())).slice(0, 6);
+      detailContent.innerHTML = `
+      <section class="sheet">
+        <p class="eyebrow">Aaj ke parv / vrat</p>
+        <div class="festival-list">
+          ${selectedFestivals.length ? selectedFestivals.map((festival) => `
+              <article class="festival-item">
+                <strong>${festival.name}</strong>
+                <p>${festival.description || festival.category || "Hindu calendar observance"}</p>
+                <div class="festival-tags">
+                  ${festival.category ? `<span class="festival-tag">${festival.category}</span>` : ""}
+                  ${festival.isFastingDay ? '<span class="festival-tag">Vrat / upwas</span>' : ""}
+                </div>
+              </article>
+            `).join("") : '<div class="empty-state">Is din koi major vrat ya tyohar marker nahi mila.</div>'}
+        </div>
+      </section>
+
+      <section class="sheet">
+        <p class="eyebrow">Nazdeeki dinon ke parv</p>
+        <div class="upcoming-list">
+          ${upcoming.length ? upcoming.map((festival) => `
+              <article class="festival-item">
+                <strong>${festival.name}</strong>
+                <p>${new Intl.DateTimeFormat("hi-IN", { day: "numeric", month: "long" }).format(festival.date)}</p>
+                <div class="festival-tags">
+                  ${festival.fasting ? '<span class="festival-tag">Upwas</span>' : '<span class="festival-tag">Parv</span>'}
+                </div>
+              </article>
+            `).join("") : '<div class="empty-state">Is month me aur koi marked parv nahi mila.</div>'}
+        </div>
+      </section>
+    `;
+    }
+    function renderDetail(monthFestivals) {
+      const data = panchangFor(state.selectedDate);
+      const festivalName = getFestivalName(data);
+      selectedDateLabel.textContent = formatDate(state.selectedDate);
+      selectedSubtitle.textContent = `${import_panchangam_js.tithiNames[data.tithi]} \u2022 ${import_panchangam_js.nakshatraNames[data.nakshatra]} \u2022 Sunrise ${formatTime(data.sunrise)}`;
+      selectedTags.innerHTML = `
+      <span class="pill">${String(data.paksha)}</span>
+      <span class="pill ${isFastingDay(data) ? "good" : ""}">${isFastingDay(data) ? "Vrat day" : "Regular day"}</span>
+      ${festivalName ? `<span class="pill good">${festivalName}</span>` : ""}
+    `;
+      if (state.tab === "muhurat") {
+        renderMuhuratSheet(data);
+        return;
+      }
+      if (state.tab === "vrat") {
+        renderVratSheet(data, monthFestivals);
+        return;
+      }
+      renderPanchangSheet(data);
+    }
+    function renderWeekdays() {
+      document.getElementById("weekdayGrid").innerHTML = weekdayLabels.map((label) => `<div class="weekday-chip">${label}</div>`).join("");
+    }
+    function renderPresets() {
+      presetRow.innerHTML = Object.entries(presets).map(([key, place]) => `
+      <button class="chip-btn ${state.placeKey === key && !state.customPlace ? "active" : ""}" data-place="${key}" type="button">${place.label}</button>
+    `).join("");
+    }
+    function render() {
+      renderWeekdays();
+      renderPresets();
+      const selectedData = panchangFor(state.selectedDate);
+      const monthFestivals = monthFestivalDigest(state.monthCursor);
+      renderTopSummary(selectedData, monthFestivals);
+      renderCalendar(monthFestivals);
+      renderDetail(monthFestivals);
+      document.querySelectorAll("[data-tab]").forEach((button) => {
+        button.classList.toggle("active", button.getAttribute("data-tab") === state.tab);
       });
+    }
+    root.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) return;
+      const placeButton = target.closest("[data-place]");
+      if (placeButton) {
+        state.customPlace = null;
+        state.placeKey = placeButton.dataset.place || "varanasi";
+        render();
+        return;
+      }
+      const tabButton = target.closest("[data-tab]");
+      if (tabButton) {
+        state.tab = tabButton.dataset.tab || "panchang";
+        render();
+        return;
+      }
+      const dateButton = target.closest("[data-date]");
+      if (dateButton) {
+        state.selectedDate = new Date(dateButton.dataset.date || Date.now());
+        render();
+      }
+    });
+    document.getElementById("prevMonthBtn")?.addEventListener("click", () => {
+      state.monthCursor = new Date(state.monthCursor.getFullYear(), state.monthCursor.getMonth() - 1, 1);
+      render();
+    });
+    document.getElementById("nextMonthBtn")?.addEventListener("click", () => {
+      state.monthCursor = new Date(state.monthCursor.getFullYear(), state.monthCursor.getMonth() + 1, 1);
+      render();
     });
     document.getElementById("geoBtn")?.addEventListener("click", () => {
       if (!navigator.geolocation) return;
       navigator.geolocation.getCurrentPosition((position) => {
-        state.custom = {
-          label: "My location",
+        state.customPlace = {
+          label: "Meri location",
           lat: position.coords.latitude,
           lng: position.coords.longitude,
           elevation: 0
         };
-        presetButtons.querySelectorAll("[data-place]").forEach((node) => node.classList.remove("active"));
         render();
       });
     });
