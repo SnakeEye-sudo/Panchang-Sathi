@@ -1,23 +1,400 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="hi">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#2d1707">
-  <meta name="description" content="Hindu calendar app with monthly panchang, muhurat, vrat-upwas, and festival details.">
-  <title>Panchang Sathi</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700;800&family=Cinzel:wght@500;600;700&display=swap" rel="stylesheet">
-  <link rel="icon" type="image/png" href="favicon.png">
-  <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#1a0a0a">
+<meta name="description" content="Panchang Sathi – Hindu calendar, tithi, nakshatra, rahu kaal – 100% offline">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Panchang Sathi 🕉️</title>
+<link rel="manifest" href="manifest.json">
+<style>
+  :root {
+    --bg: #1a0a00; --surface: #2a1500; --surface2: #3d2000;
+    --border: rgba(251,191,36,0.2); --accent: #fbbf24; --accent2: #fde68a;
+    --text: #fef9e7; --muted: #9d7040;
+    --font: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+  [data-theme="light"] { --bg: #fffbeb; --surface: #fff; --surface2: #fef9c3; --text: #78350f; --muted: #92400e; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; }
+  body { font-family: var(--font); background: var(--bg); color: var(--text); display: flex; flex-direction: column; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px 10px; background: var(--surface); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .topbar-brand { display: flex; align-items: center; gap: 10px; }
+  .topbar-title { font-size: 18px; font-weight: 700; }
+  .topbar-sub { font-size: 11px; color: var(--muted); }
+  .icon-btn { width: 38px; height: 38px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding-bottom: 80px; }
+  .view { display: none; } .view.active { display: block; }
+  .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; height: 70px; background: var(--surface); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-around; z-index: 100; padding-bottom: env(safe-area-inset-bottom); }
+  .nav-item { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 20px; cursor: pointer; border: none; background: none; color: var(--muted); font-family: var(--font); transition: color 0.2s; }
+  .nav-item.active { color: var(--accent); }
+  .nav-item span { font-size: 10px; font-weight: 600; }
+  .nav-item svg { width: 22px; height: 22px; }
+
+  /* TODAY PANCHANG */
+  .panch-wrap { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .date-hero { background: linear-gradient(135deg, var(--surface), var(--surface2)); border: 1.5px solid var(--border); border-radius: 24px; padding: 24px; text-align: center; }
+  .date-hindu { font-size: 22px; font-weight: 900; color: var(--accent); }
+  .date-greg { font-size: 14px; color: var(--muted); margin-top: 4px; }
+  .date-nav { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 16px; }
+  .date-nav button { background: var(--surface2); border: 1.5px solid var(--border); border-radius: 12px; color: var(--accent); width: 36px; height: 36px; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .date-nav span { font-size: 14px; font-weight: 600; color: var(--muted); min-width: 100px; text-align: center; }
+  .panch-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .panch-card { background: var(--surface); border: 1.5px solid var(--border); border-radius: 18px; padding: 16px; }
+  .panch-icon { font-size: 22px; margin-bottom: 6px; }
+  .panch-key { font-size: 11px; color: var(--muted); font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px; }
+  .panch-val { font-size: 16px; font-weight: 800; color: var(--accent2); line-height: 1.3; }
+  .panch-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .rahu-bar { background: var(--surface); border: 1.5px solid rgba(239,68,68,0.3); border-radius: 18px; padding: 16px; }
+  .rahu-title { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 800; color: #f87171; margin-bottom: 8px; }
+  .time-block { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .time-item { background: var(--surface2); border-radius: 12px; padding: 10px; text-align: center; }
+  .time-item-name { font-size: 10px; color: var(--muted); font-weight: 700; margin-bottom: 4px; }
+  .time-item-val { font-size: 13px; font-weight: 800; }
+  .auspicious { color: #4ade80; }
+  .inauspicious { color: #f87171; }
+
+  /* CALENDAR VIEW */
+  .cal-wrap { padding: 16px; }
+  .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .cal-nav button { background: var(--surface2); border: 1.5px solid var(--border); border-radius: 12px; color: var(--accent); width: 38px; height: 38px; font-size: 18px; cursor: pointer; }
+  .cal-nav h2 { font-size: 18px; font-weight: 800; color: var(--accent2); }
+  .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-bottom: 8px; }
+  .cal-weekday { font-size: 12px; font-weight: 700; color: var(--muted); padding: 8px 0; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-day { aspect-ratio: 1; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; border: 1.5px solid transparent; transition: all 0.15s; }
+  .cal-day:hover { background: var(--surface2); }
+  .cal-day.today { border-color: var(--accent); background: rgba(251,191,36,0.15); }
+  .cal-day.selected { background: var(--accent); }
+  .cal-day.selected .cal-greg { color: #1a0a00 !important; }
+  .cal-day.selected .cal-tithi-sm { color: #78350f !important; }
+  .cal-greg { font-size: 15px; font-weight: 700; }
+  .cal-tithi-sm { font-size: 8px; color: var(--muted); margin-top: 2px; text-align: center; line-height: 1.2; }
+  .cal-empty { }
+
+  /* FESTIVALS */
+  .fest-wrap { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .fest-month-header { font-size: 13px; font-weight: 800; color: var(--accent); padding: 8px 0 4px; }
+  .fest-item { background: var(--surface); border: 1.5px solid var(--border); border-radius: 16px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; }
+  .fest-icon { font-size: 28px; }
+  .fest-info { flex: 1; }
+  .fest-name { font-size: 15px; font-weight: 800; color: var(--accent2); }
+  .fest-date { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .fest-days { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 20px; background: rgba(251,191,36,0.15); color: var(--accent); white-space: nowrap; }
+  .fest-days.past { background: rgba(156,163,175,0.1); color: var(--muted); }
+
+  .section-header { font-size: 12px; color: var(--muted); font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 8px 0 4px; }
+</style>
 </head>
-<body>
-  <main id="appRoot"></main>
-  <script src="app.js"></script>
-  <script defer src="notification-prompt.js"></script>
+<body data-theme="dark">
+<div class="topbar">
+  <div class="topbar-brand">
+    <span style="font-size:22px">🕉️</span>
+    <div>
+      <div class="topbar-title">Panchang Sathi</div>
+      <div class="topbar-sub" id="todayGreg">Loading...</div>
+    </div>
+  </div>
+  <button class="icon-btn" id="themeBtn">🌙</button>
+</div>
+
+<div class="main">
+  <div class="view active" id="view-today">
+    <div class="panch-wrap">
+      <div class="date-hero">
+        <div class="date-nav">
+          <button onclick="changeDay(-1)">‹</button>
+          <span id="navDateLabel">Aaj</span>
+          <button onclick="changeDay(1)">›</button>
+        </div>
+        <div class="date-hindu" id="hinduDate">–</div>
+        <div class="date-greg" id="gregDate">–</div>
+      </div>
+      <div class="panch-grid" id="panchGrid"></div>
+      <div class="rahu-bar" id="rahuBar"></div>
+      <div class="section-header">Shubh Muhurat</div>
+      <div class="time-block" id="muhurat"></div>
+    </div>
+  </div>
+
+  <div class="view" id="view-calendar">
+    <div class="cal-wrap">
+      <div class="cal-nav">
+        <button onclick="changeMonth(-1)">‹</button>
+        <h2 id="calMonthYear">–</h2>
+        <button onclick="changeMonth(1)">›</button>
+      </div>
+      <div class="cal-weekdays">
+        <div class="cal-weekday" style="color:#f87171">S</div>
+        <div class="cal-weekday">M</div><div class="cal-weekday">T</div>
+        <div class="cal-weekday">W</div><div class="cal-weekday">T</div>
+        <div class="cal-weekday">F</div>
+        <div class="cal-weekday" style="color:#60a5fa">S</div>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+  </div>
+
+  <div class="view" id="view-festivals">
+    <div class="fest-wrap" id="festList"></div>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <button class="nav-item active" data-view="today">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+    <span>Aaj</span>
+  </button>
+  <button class="nav-item" data-view="calendar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+    <span>Calendar</span>
+  </button>
+  <button class="nav-item" data-view="festivals">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+    <span>Tyohaar</span>
+  </button>
+</nav>
+
+<script>
+// ===================== PANCHANG CALCULATIONS =====================
+// Pure JS astronomical calculations — NO API needed
+
+const TITHI = ['Pratipada','Dwitiya','Tritiya','Chaturthi','Panchami','Shashthi','Saptami','Ashtami','Navami','Dashami','Ekadashi','Dwadashi','Trayodashi','Chaturdashi','Purnima','Pratipada','Dwitiya','Tritiya','Chaturthi','Panchami','Shashthi','Saptami','Ashtami','Navami','Dashami','Ekadashi','Dwadashi','Trayodashi','Chaturdashi','Amavasya'];
+const PAKSHA = ['Shukla','Shukla','Shukla','Shukla','Shukla','Shukla','Shukla','Shukla','Shukla','Shukla','Shukla','Shukla','Shukla','Shukla','Shukla','Krishna','Krishna','Krishna','Krishna','Krishna','Krishna','Krishna','Krishna','Krishna','Krishna','Krishna','Krishna','Krishna','Krishna','Krishna'];
+const NAKSHATRA = ['Ashwini','Bharani','Krittika','Rohini','Mrigashira','Ardra','Punarvasu','Pushya','Ashlesha','Magha','Purva Phalguni','Uttara Phalguni','Hasta','Chitra','Swati','Vishakha','Anuradha','Jyeshtha','Mula','Purva Ashadha','Uttara Ashadha','Shravana','Dhanishtha','Shatabhisha','Purva Bhadrapada','Uttara Bhadrapada','Revati'];
+const RASHI = ['Mesh','Vrishabh','Mithun','Karka','Simha','Kanya','Tula','Vrishchik','Dhanu','Makar','Kumbh','Meen'];
+const VARA = ['Ravivar','Somvar','Mangalvar','Budhvar','Guruvar','Shukravar','Shanivar'];
+const VARA_LORDS = ['Surya','Chandra','Mangal','Budh','Guru','Shukra','Shani'];
+const HINDI_MONTHS = ['Chaitra','Vaishakh','Jyeshtha','Ashadh','Shravan','Bhadrapada','Ashwin','Kartik','Margashirsha','Paush','Magh','Phalgun'];
+const GREG_MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+// Julian Day Number
+function jdn(y, m, d) {
+  if (m <= 2) { y--; m += 12; }
+  const A = Math.floor(y / 100);
+  const B = 2 - A + Math.floor(A / 4);
+  return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + d + B - 1524.5;
+}
+
+function getMoonSunLong(date) {
+  const jd = jdn(date.getFullYear(), date.getMonth() + 1, date.getDate()) - 2451545.0;
+  const T = jd / 36525;
+  // Sun longitude
+  const L0 = 280.46646 + 36000.76983 * T;
+  const M = (357.52911 + 35999.05029 * T) * Math.PI / 180;
+  const C = (1.914602 - 0.004817 * T - 0.000014 * T * T) * Math.sin(M) + (0.019993 - 0.000101 * T) * Math.sin(2 * M);
+  const sunLong = ((L0 + C) % 360 + 360) % 360;
+  // Moon longitude (simplified)
+  const Lm = ((218.3165 + 481267.8813 * T) % 360 + 360) % 360;
+  const Mm = (134.9634 + 477198.8676 * T) * Math.PI / 180;
+  const F = (93.2721 + 483202.0175 * T) * Math.PI / 180;
+  const moonLong = ((Lm + 6.2886 * Math.sin(Mm) + 1.274 * Math.sin(2 * F - Mm) + 0.6583 * Math.sin(2 * F)) % 360 + 360) % 360;
+  return { sun: sunLong, moon: moonLong };
+}
+
+function calcPanchang(date) {
+  const { sun, moon } = getMoonSunLong(date);
+  const diff = ((moon - sun) % 360 + 360) % 360;
+  const tithiIndex = Math.floor(diff / 12);
+  const tithi = TITHI[tithiIndex];
+  const paksha = PAKSHA[tithiIndex];
+  const nakIndex = Math.floor(moon / (360 / 27));
+  const rashiIndex = Math.floor(sun / 30);
+  const vara = VARA[date.getDay()];
+  const lord = VARA_LORDS[date.getDay()];
+
+  // Hindu month estimation
+  const hinduMonthIndex = Math.floor(sun / 30) % 12;
+
+  // Yoga (sum of sun+moon longitudes / 13.3333)
+  const yogaLong = ((sun + moon) % 360 + 360) % 360;
+  const yogaIndex = Math.floor(yogaLong / 13.333);
+  const YOGA = ['Vishkambha','Preeti','Ayushman','Saubhagya','Shobhana','Atiganda','Sukarma','Dhriti','Shula','Ganda','Vriddhi','Dhruva','Vyaghata','Harshana','Vajra','Siddhi','Vyatipata','Variyan','Parigha','Shiva','Siddha','Sadhya','Shubha','Shukla','Brahma','Indra','Vaidhriti'];
+
+  // Karana
+  const karanaList = ['Kinstughna','Bava','Balava','Kaulava','Taitila','Garija','Vanija','Vishti','Bava','Balava','Kaulava','Taitila','Garija','Vanija','Vishti'];
+  const karanaIndex = Math.floor(diff / 6) % 11;
+  const karana = karanaList[karanaIndex] || 'Vishti';
+
+  // Rahu Kaal (day-specific fixed slots)
+  const RAHU_SLOTS = [
+    [16,30,18,0], [7,30,9,0], [15,0,16,30], [12,0,13,30],
+    [10,30,12,0], [10,30,12,0], [9,0,10,30]
+  ];
+  const rs = RAHU_SLOTS[date.getDay()];
+
+  // Sunrise/Sunset approx (IST average)
+  const sunrise = '06:15'; const sunset = '18:45';
+
+  // Abhijit muhurat (~11:45-12:45)
+  return {
+    tithi, paksha, tithiIndex,
+    nakshatra: NAKSHATRA[nakIndex % 27],
+    yoga: YOGA[yogaIndex % 27],
+    karana,
+    vara, lord,
+    rashi: RASHI[rashiIndex],
+    hinduMonth: HINDI_MONTHS[hinduMonthIndex],
+    rahuStart: `${rs[0]}:${String(rs[1]).padStart(2,'0')}`,
+    rahuEnd: `${rs[2]}:${String(rs[3]).padStart(2,'0')}`,
+    sunrise, sunset,
+    sunLong: sun.toFixed(2), moonLong: moon.toFixed(2)
+  };
+}
+
+function formatHinduDate(date, p) {
+  return `${p.hinduMonth} ${p.paksha} ${p.tithiIndex % 15 + 1} | Vikram Samvat`;
+}
+
+let viewDate = new Date();
+
+function renderToday() {
+  const p = calcPanchang(viewDate);
+  const isToday = viewDate.toDateString() === new Date().toDateString();
+  document.getElementById('hinduDate').textContent = `${p.hinduMonth} ${p.paksha} ${p.tithi}`;
+  document.getElementById('gregDate').textContent = viewDate.toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  document.getElementById('navDateLabel').textContent = isToday ? 'Aaj' : viewDate.toLocaleDateString('hi-IN', { day: 'numeric', month: 'short' });
+  document.getElementById('todayGreg').textContent = viewDate.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
+  document.getElementById('panchGrid').innerHTML = `
+    <div class="panch-card"><div class="panch-icon">🌙</div><div class="panch-key">Tithi</div><div class="panch-val">${p.tithi}</div><div class="panch-sub">${p.paksha} Paksha</div></div>
+    <div class="panch-card"><div class="panch-icon">⭐</div><div class="panch-key">Nakshatra</div><div class="panch-val">${p.nakshatra}</div><div class="panch-sub">Moon's position</div></div>
+    <div class="panch-card"><div class="panch-icon">🔱</div><div class="panch-key">Vara (Din)</div><div class="panch-val">${p.vara}</div><div class="panch-sub">Swami: ${p.lord}</div></div>
+    <div class="panch-card"><div class="panch-icon">☸️</div><div class="panch-key">Yoga</div><div class="panch-val">${p.yoga}</div><div class="panch-sub">Sun+Moon</div></div>
+    <div class="panch-card"><div class="panch-icon">♈</div><div class="panch-key">Sun Rashi</div><div class="panch-val">${p.rashi}</div><div class="panch-sub">Surya</div></div>
+    <div class="panch-card"><div class="panch-icon">🌿</div><div class="panch-key">Karana</div><div class="panch-val">${p.karana}</div><div class="panch-sub">Half-tithi</div></div>
+  `;
+  document.getElementById('rahuBar').innerHTML = `
+    <div class="rahu-title">🚫 Rahu Kaal – Avoid Important Work</div>
+    <div style="font-size:22px;font-weight:900;color:#f87171;text-align:center;margin-bottom:8px">${p.rahuStart} – ${p.rahuEnd}</div>
+    <div style="font-size:12px;color:var(--muted);text-align:center">Is samay koi shubh kaam na karein</div>
+  `;
+  document.getElementById('muhurat').innerHTML = `
+    <div class="time-item"><div class="time-item-name">Sunrise</div><div class="time-item-val auspicious">${p.sunrise}</div></div>
+    <div class="time-item"><div class="time-item-name">Abhijit</div><div class="time-item-val auspicious">11:45–12:45</div></div>
+    <div class="time-item"><div class="time-item-name">Sunset</div><div class="time-item-val">${p.sunset}</div></div>
+    <div class="time-item"><div class="time-item-name">Brahma</div><div class="time-item-val auspicious">04:00–05:30</div></div>
+    <div class="time-item"><div class="time-item-name">Gulika</div><div class="time-item-val inauspicious">Various</div></div>
+    <div class="time-item"><div class="time-item-name">Yamaganda</div><div class="time-item-val inauspicious">Various</div></div>
+  `;
+}
+
+function changeDay(d) {
+  viewDate.setDate(viewDate.getDate() + d);
+  renderToday();
+}
+
+// CALENDAR
+let calYear = new Date().getFullYear(), calMonth = new Date().getMonth();
+
+function renderCal() {
+  document.getElementById('calMonthYear').textContent = `${GREG_MONTHS[calMonth]} ${calYear}`;
+  const grid = document.getElementById('calGrid');
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const today = new Date();
+  let html = '';
+  for (let i = 0; i < firstDay; i++) html += '<div class="cal-empty"></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dt = new Date(calYear, calMonth, d);
+    const p = calcPanchang(dt);
+    const isToday = dt.toDateString() === today.toDateString();
+    const isSelected = dt.toDateString() === viewDate.toDateString();
+    html += `
+      <div class="cal-day ${isToday?'today':''} ${isSelected?'selected':''}" onclick="selectDay(${d})">
+        <div class="cal-greg" style="${dt.getDay()===0?'color:#f87171':dt.getDay()===6?'color:#60a5fa':''}">${d}</div>
+        <div class="cal-tithi-sm">${p.tithiIndex===14?'🌕':p.tithiIndex===29?'🌑':p.tithiIndex%15+1}</div>
+      </div>`;
+  }
+  grid.innerHTML = html;
+}
+
+function selectDay(d) {
+  viewDate = new Date(calYear, calMonth, d);
+  renderCal();
+  renderToday();
+}
+function changeMonth(d) {
+  calMonth += d;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0) { calMonth = 11; calYear--; }
+  renderCal();
+}
+
+// FESTIVALS 2025-2026
+const FESTIVALS = [
+  { name: 'Makar Sankranti', date: '2026-01-14', icon: '🪁', type: 'Utsav' },
+  { name: 'Basant Panchami', date: '2026-02-02', icon: '🌸', type: 'Utsav' },
+  { name: 'Mahashivratri', date: '2026-02-26', icon: '🕉️', type: 'Vrat' },
+  { name: 'Holi', date: '2026-03-04', icon: '🎨', type: 'Utsav' },
+  { name: 'Holika Dahan', date: '2026-03-03', icon: '🔥', type: 'Vrat' },
+  { name: 'Gudi Padwa / Ugadi', date: '2026-03-19', icon: '🌺', type: 'Utsav' },
+  { name: 'Ram Navami', date: '2026-03-28', icon: '🏹', type: 'Vrat' },
+  { name: 'Hanuman Jayanti', date: '2026-04-06', icon: '🙏', type: 'Utsav' },
+  { name: 'Akshaya Tritiya', date: '2026-04-21', icon: '💛', type: 'Muhurat' },
+  { name: 'Buddha Purnima', date: '2026-05-11', icon: '☸️', type: 'Utsav' },
+  { name: 'Rath Yatra', date: '2026-06-22', icon: '🛕', type: 'Utsav' },
+  { name: 'Guru Purnima', date: '2026-07-04', icon: '📚', type: 'Vrat' },
+  { name: 'Raksha Bandhan', date: '2026-08-11', icon: '🪢', type: 'Utsav' },
+  { name: 'Janmashtami', date: '2026-08-16', icon: '🎵', type: 'Vrat' },
+  { name: 'Ganesh Chaturthi', date: '2026-08-25', icon: '🐘', type: 'Utsav' },
+  { name: 'Navratri (Shardiya)', date: '2026-10-09', icon: '🌟', type: 'Vrat' },
+  { name: 'Dussehra', date: '2026-10-19', icon: '🏹', type: 'Utsav' },
+  { name: 'Karwa Chauth', date: '2026-10-28', icon: '🌙', type: 'Vrat' },
+  { name: 'Diwali', date: '2026-11-08', icon: '🪔', type: 'Utsav' },
+  { name: 'Bhai Dooj', date: '2026-11-10', icon: '🤝', type: 'Utsav' },
+  { name: 'Chhath Puja', date: '2026-11-14', icon: '☀️', type: 'Vrat' },
+  { name: 'Vivah Panchami', date: '2026-11-27', icon: '💍', type: 'Utsav' },
+  { name: 'Gita Jayanti', date: '2026-12-05', icon: '📖', type: 'Utsav' },
+];
+
+function renderFestivals() {
+  const today = new Date();
+  const sorted = [...FESTIVALS].sort((a, b) => new Date(a.date) - new Date(b.date));
+  const html = sorted.map(f => {
+    const d = new Date(f.date);
+    const diff = Math.ceil((d - today) / 86400000);
+    const dateStr = d.toLocaleDateString('hi-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+    const daysTag = diff < 0 ? 'Ho gaya' : diff === 0 ? 'Aaj! 🎉' : diff + ' din baad';
+    return `
+      <div class="fest-item">
+        <div class="fest-icon">${f.icon}</div>
+        <div class="fest-info">
+          <div class="fest-name">${f.name}</div>
+          <div class="fest-date">${dateStr} • ${f.type}</div>
+        </div>
+        <div class="fest-days ${diff < 0 ? 'past' : ''}">${daysTag}</div>
+      </div>`;
+  }).join('');
+  document.getElementById('festList').innerHTML = html || 'No festivals found.';
+}
+
+// INIT
+renderToday();
+renderCal();
+renderFestivals();
+
+// NAV
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    item.classList.add('active');
+    document.getElementById('view-' + item.dataset.view).classList.add('active');
+  });
+});
+
+// THEME
+const t0 = localStorage.getItem('panch-theme') || 'dark';
+document.body.dataset.theme = t0;
+document.getElementById('themeBtn').textContent = t0 === 'dark' ? '🌙' : '☀️';
+document.getElementById('themeBtn').addEventListener('click', () => {
+  const t = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+  document.body.dataset.theme = t;
+  document.getElementById('themeBtn').textContent = t === 'dark' ? '🌙' : '☀️';
+  localStorage.setItem('panch-theme', t);
+});
+</script>
 </body>
 </html>
-
-
